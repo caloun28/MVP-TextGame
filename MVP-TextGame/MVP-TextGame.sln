@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36511.14 d17.14
+VisualStudioVersion = 17.14.36511.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MVP-TextGame", "MVP-TextGame\MVP-TextGame.csproj", "{A604C9FE-FD95-44B0-8576-E2B734029FBB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MVP_TextGame_Client", "MVP_TextGame_Client\MVP_TextGame_Client.csproj", "{F8E38D60-9E28-4DC8-BE94-7FD2E9632B90}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{A604C9FE-FD95-44B0-8576-E2B734029FBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A604C9FE-FD95-44B0-8576-E2B734029FBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A604C9FE-FD95-44B0-8576-E2B734029FBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8E38D60-9E28-4DC8-BE94-7FD2E9632B90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8E38D60-9E28-4DC8-BE94-7FD2E9632B90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8E38D60-9E28-4DC8-BE94-7FD2E9632B90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8E38D60-9E28-4DC8-BE94-7FD2E9632B90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
