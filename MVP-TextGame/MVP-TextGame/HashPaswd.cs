@@ -8,9 +8,9 @@ namespace MVP_TextGame
 {
     public class HashPaswd
     {
-        private int _move = 5;
+        private const int _move = 5;
 
-        public string HashPassword(string password)
+        public static string HashPassword(string password)
         {
             if (string.IsNullOrEmpty(password)) return "";
 
@@ -27,7 +27,7 @@ namespace MVP_TextGame
             return new string(chars);
         }
 
-        public bool Verification(string password, string hashedPassword)
+        public static bool Verification(string password, string hashedPassword)
         {
             string hashedInput = HashPassword(password);
 

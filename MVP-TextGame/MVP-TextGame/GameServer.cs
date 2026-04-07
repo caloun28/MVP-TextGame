@@ -13,9 +13,14 @@ namespace MVP_TextGame
     {
         private readonly int _port;
 
+        private UserManager _userManager = new UserManager();
+        private List<Player> _activePlayers;
+        private int _maxPlayers = 2;
+
         public GameServer(int port)
         {
             _port = port;
+            _activePlayers = new List<Player>();
         }
 
         public async Task StartAsync()
@@ -25,94 +30,186 @@ namespace MVP_TextGame
             try
             {
                 listener.Start();
-                Console.WriteLine($"Server spusten na portu {_port}. Cekam na hrace...");
+                Console.WriteLine($"Server started at {_port}. Waiting for players..");
 
                 while (true)
                 {
                     TcpClient client = await listener.AcceptTcpClientAsync();
-                    Console.WriteLine($"Klient pripojen: {client.Client.RemoteEndPoint}");
+                    Console.WriteLine($"Client connected: {client.Client.RemoteEndPoint}");
+
+                    if (_activePlayers.Count >= _maxPlayers)
+                    {
+                        using (StreamWriter writer = new StreamWriter(client.GetStream(), Encoding.UTF8) { AutoFlush = true })
+                        {
+                            await writer.WriteLineAsync("Both players are joined, game is already running");
+                        }
+                    }
 
                     Task.Run(() => HandleClientAsync(client));
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Chyba na serveru: {e.Message}");
+                Console.WriteLine($"Error on server side: {e.Message}");
             }
         }
 
         public async Task HandleClientAsync(TcpClient client)
         {
             string endpoint = client.Client.RemoteEndPoint.ToString();
-
+            Player player = null;
             try
             {
-                using (client)
-                using (StreamReader reader = new StreamReader(client.GetStream(), Encoding.UTF8))
-                using (StreamWriter writer = new StreamWriter(client.GetStream(), Encoding.UTF8))
+                StreamReader reader = new StreamReader(client.GetStream(), Encoding.UTF8);
+                StreamWriter writer = new StreamWriter(client.GetStream(), Encoding.UTF8) { AutoFlush = true };
+
+                string playerName = await VerifiPlayerAsync(reader, writer);
+                if (playerName == null) return;
+
+                player = new Player(playerName, client, reader, writer);
+                lock (_activePlayers)
                 {
-                    writer.AutoFlush = true;
-
-                    await writer.WriteLineAsync("Vitej v opustenem dole");
-                    await writer.WriteLineAsync("Zadej [1] pro prihlaseni nebo [2] pro registraci");
-
-                    string choice = await reader.ReadLineAsync();
-                    string playerName = "";
-
-                    switch (choice)
-                    {
-                        case "1":
-                            await writer.WriteLineAsync("Zadej jmeno:");
-                            playerName = await reader.ReadLineAsync();
-                            await writer.WriteLineAsync("Zadej heslo:");
-                            string password = await reader.ReadLineAsync();
-                            break;
-
-                        case "2":
-                            await writer.WriteLineAsync("Zadej nove jmeno:");
-                            playerName = await reader.ReadLineAsync();
-                            Console.WriteLine($"Hrac {playerName} se uspesne registroval.");
-                            break;
-
-                        default:
-                            await writer.WriteLineAsync("Neplatna volba. Odpojuji...");
-                            return;
-                    }
-
-                    await writer.WriteLineAsync($"\nJsi prihlasen jako {playerName}. Pro napovedu zadej 'pomoc'.");
-                    bool isPlaying = true;
-
-                    while (isPlaying)
-                    {
-                        string command = await reader.ReadLineAsync();
-
-                        if (command == "")
-                        {
-                            break;
-                        }
-
-                        Console.WriteLine($"Hrac {playerName} zadal prikaz {command}");
-
-                        switch (command.ToLower())
-                        {
-                            case "exit":
-                                await writer.WriteLineAsync("Odpojovani z herniho sveta...");
-                                isPlaying = false;
-                                break;
-
-                            default:
-                                await writer.WriteLineAsync("Neznamy prikaz. Zadej 'pomoc' pro seznam prikazu.");
-                                break;
-
-                        }
-                    }
-
+                    _activePlayers.Add(player);
                 }
+
+                await WaitForPlayer(player);
+                await GamePlay(player);
+
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Spojeni s hracem ({endpoint}) bylo preruseno: {ex.Message}");
+                Console.WriteLine($"Connection to player ({endpoint}) has been disconnected: {ex.Message}");
             }
+            finally
+            {
+                if (player != null)
+                {
+                    DisconnectPlayer(player);
+                }
+                else
+                {
+                    client.Close();
+                }
+            }
+        }
+
+
+
+        private async Task<string> VerifiPlayerAsync(StreamReader reader, StreamWriter writer)
+        {
+            while (true)
+            {
+                string playerName = "";
+
+                await writer.WriteLineAsync("Welcome to the abandoned mine");
+                await writer.WriteLineAsync("Enter [1] to login or [2] to register");
+
+                string choice = await reader.ReadLineAsync();
+
+                switch (choice)
+                {
+                    case "1":
+                        await writer.WriteLineAsync("Enter username:");
+                        playerName = await reader.ReadLineAsync();
+                        await writer.WriteLineAsync("Enter password:");
+                        string password = await reader.ReadLineAsync();
+
+                        if (_userManager.Login(playerName, password))
+                        {
+                            await writer.WriteLineAsync("Login successful");
+                            return playerName;
+                        }
+                        else
+                        {
+                            await writer.WriteLineAsync("Invalid username or password. Try again.");
+                        }
+                        break;
+
+                    case "2":
+                        await writer.WriteLineAsync("Create new username:");
+                        playerName = await reader.ReadLineAsync();
+                        await writer.WriteLineAsync("Create new password:");
+                        string newPassword = await reader.ReadLineAsync();
+
+                        if (_userManager.Register(playerName, newPassword))
+                        {
+                            await writer.WriteLineAsync("Registration successful. You can now login.");
+                            Console.WriteLine($"New user registered: {playerName}");
+                            return playerName;
+                        }
+                        else
+                        {
+                            await writer.WriteLineAsync("Username already exists. Try again.");
+                        }
+                        break;
+
+                    default:
+                        await writer.WriteLineAsync("Invalid choice. Please enter [1] to login or [2] to register.");
+                        break;
+                }
+            }
+        }
+
+
+        public async Task GamePlay(Player player)
+        {
+            bool isPlaying = true;
+
+            while (isPlaying)
+            {
+                string command = await player.Reader.ReadLineAsync();
+
+                if (string.IsNullOrEmpty(command))
+                {
+                    break;
+                }
+
+                Console.WriteLine($"Received command from {player.Name}: {command}");
+
+                switch (command.ToLower())
+                {
+                    case "exit":
+                        await player.Writer.WriteLineAsync("Exiting the game. Goodbye!");
+                        isPlaying = false;
+                        break;
+
+
+                    default:
+                        await player.Writer.WriteLineAsync($"Unknown command: {command}");
+                        break;
+                }
+            }
+        }
+
+        public async Task WaitForPlayer(Player player)
+        {
+            if (_activePlayers.Count < _maxPlayers)
+            {
+                await player.Writer.WriteLineAsync($"You are connected as {player}.");
+                await player.Writer.WriteLineAsync("Waiting for another player to join...");
+
+
+                while (_activePlayers.Count < _maxPlayers)
+                {
+                    await Task.Delay(500);
+                }
+            }
+
+            await player.Writer.WriteLineAsync("Both players are connected. Starting the game...");
+            await player.Writer.WriteLineAsync("For help type 'help'");
+        }
+
+        public void DisconnectPlayer(Player player)
+        {
+            lock (_activePlayers)
+            {
+                if (_activePlayers.Contains(player))
+                {
+                    _activePlayers.Remove(player);
+                    Console.WriteLine($"Player {player.Name} has disconnected.");
+                }
+            }
+            player.Client.Close();
         }
     }
 }
