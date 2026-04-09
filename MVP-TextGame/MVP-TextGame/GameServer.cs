@@ -211,5 +211,19 @@ namespace MVP_TextGame
             }
             player.Client.Close();
         }
+
+        public async Task HelpOnPlayerDeath(Player player)
+        {
+            player.Deaths++;
+            player.CurrentHealth = player.MaxHealth;
+
+            await player.Writer.WriteLineAsync($"YOU HAVE DIED!!");
+            await player.Writer.WriteLineAsync("You have been respawned at the start of the mine.");
+
+            if(player.Deaths == 3)
+            {
+                await player.Writer.WriteLineAsync("[HELP]: Try to find better weapons and do sidequests.");
+            }
+        }
     }
 }
