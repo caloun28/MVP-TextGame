@@ -1,0 +1,36 @@
+{
+  "rooms": [
+    {
+      "name": "Start",
+      "description": "You are at the start of the mine.",
+      "connections": {
+        "east": "Tunnel"
+      }
+    },
+    {
+      "name": "Tunnel",
+      "description": "Dark tunnel with strange noises.",
+      "connections": {
+        "west": "Start",
+        "east": "Main"
+      }
+    },
+    {
+      "name": "Main",
+      "description": "A large underground chamber with echoing walls.",
+      "connections": {
+      "west": "Tunnel"
+    },
+    "npcs": [
+        {
+        "name": "Old Miner",
+        "dialogue": "Finally someone came... this mine feels... cursed."
+        },
+        {
+        "name": "Ghost",
+        "dialogue": "Leave this place while you still can..."
+        }
+      ]
+    }
+  ]
+}

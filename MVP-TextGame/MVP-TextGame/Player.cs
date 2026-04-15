@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MVP_TextGame.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -13,6 +14,8 @@ namespace MVP_TextGame
         public TcpClient Client { get; set; }
         public StreamReader Reader { get; set; }
         public StreamWriter Writer { get; set; }
+        public Room CurrentRoom { get; set; }
+        public List<Npc> TalkOptions { get; set; }
 
         private int maxHealth = 100;
         private int currentHealth;
@@ -121,6 +124,8 @@ namespace MVP_TextGame
             Client = client;
             Reader = reader;
             Writer = writer;
+
+            TalkOptions = null;
         }
     }
 }
