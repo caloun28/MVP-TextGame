@@ -59,11 +59,11 @@ namespace MVP_TextGame_Client
                 while (true)
                 {
                     string input = Console.ReadLine();
-                    if(string.IsNullOrEmpty(input)) continue;
+                    if (string.IsNullOrEmpty(input)) continue;
 
                     await writer.WriteLineAsync(input);
 
-                    if(input.ToLower() == "exit")
+                    if (input.ToLower() == "exit")
                     {
                         break;
                     }

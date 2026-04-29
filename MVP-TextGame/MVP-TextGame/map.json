@@ -1,36 +1,231 @@
 {
   "rooms": [
     {
-      "name": "Start",
-      "description": "You are at the start of the mine.",
+      "name": "Spawn",
+      "description": "You wake up at the entrance of an abandoned mine.",
       "connections": {
-        "east": "Tunnel"
-      }
+        "main": "MainRoom"
+      },
+      "type": "safe"
     },
+
     {
-      "name": "Tunnel",
-      "description": "Dark tunnel with strange noises.",
+      "name": "MainRoom",
+      "description": "The main chamber of the mine.",
       "connections": {
-        "west": "Start",
-        "east": "Main"
-      }
-    },
-    {
-      "name": "Main",
-      "description": "A large underground chamber with echoing walls.",
-      "connections": {
-      "west": "Tunnel"
-    },
-    "npcs": [
+        "spawn": "Spawn",
+        "shaft1": "Shaft1",
+        "shaft2": "Shaft2"
+      },
+      "type": "safe",
+      "npcs": [
         {
-        "name": "Old Miner",
-        "dialogue": "Finally someone came... this mine feels... cursed."
-        },
-        {
-        "name": "Ghost",
-        "dialogue": "Leave this place while you still can..."
+          "name": "Guide",
+          "dialogue": "*story*"
         }
       ]
+    },
+
+    {
+      "name": "Shaft1",
+      "description": "A collapsed tunnel blocked by rocks.",
+      "connections": {
+        "main": "MainRoom",
+        "big": "BigRoom"
+      },
+      "type": "blocked",
+      "blocked": true,
+      "blockedBy": "rubble"
+    },
+
+    {
+      "name": "Shaft2",
+      "description": "A dark shaft with a miner.",
+      "connections": {
+        "main": "MainRoom",
+        "storage": "SideRoom1"
+      },
+      "type": "quest",
+      "npcs": [
+        {
+          "name": "Miner",
+          "dialogue": "Kill the enemy in the storage room and I will reward you."
+        }
+      ]
+    },
+
+    {
+      "name": "SideRoom1",
+      "description": "A storage room guarded by an enemy.",
+      "connections": {
+        "shaft2": "Shaft2",
+        "shaft3": "Shaft3"
+      },
+      "type": "combat",
+      "npcs": [
+        {
+          "name": "Guard",
+          "isEnemy": true,
+          "hp": 120,
+          "attack": 8
+        }
+      ]
+    },
+
+    {
+      "name": "Shaft3",
+      "description": "A tunnel blocked by a miniboss.",
+      "connections": {
+        "back": "SideRoom1",
+        "forward": "SideRoom2"
+      },
+      "type": "boss_gate",
+      "boss": {
+        "name": "MiniBoss1",
+        "isEnemy": true,
+        "hp": 200,
+        "attack": 15,
+        "isBoss": true
+      }
+    },
+
+    {
+      "name": "SideRoom2",
+      "description": "A room with puzzles and strange symbols.",
+      "connections": {
+        "shaft3": "Shaft3",
+        "shaft4": "Shaft4"
+      },
+      "type": "quest",
+      "npcs": [
+        {
+          "name": "RiddleMaster",
+          "dialogue": "What grows but never decreases?"
+        },
+        {
+          "name": "Builder",
+          "dialogue": "Rearrange the logs to proceed."
+        }
+      ]
+    },
+
+    {
+      "name": "Shaft4",
+      "description": "A dangerous tunnel with an enemy.",
+      "connections": {
+        "back": "SideRoom2",
+        "big": "BigRoom"
+      },
+      "type": "combat",
+      "npcs": [
+        {
+          "name": "DarkMiner",
+          "isEnemy": true,
+          "hp": 140,
+          "attack": 10
+        }
+      ]
+    },
+
+    {
+      "name": "BigRoom",
+      "description": "A massive underground chamber.",
+      "connections": {
+        "shaft1": "Shaft1",
+        "shaft4": "Shaft4",
+        "shaft5": "Shaft5",
+        "final": "FinalRoom"
+      },
+      "type": "safe",
+      "npcs": [
+        {
+          "name": "Elder",
+          "dialogue": "Get the key and be careful."
+        },
+        {
+          "name": "MiniBoss2",
+          "isEnemy": true,
+          "hp": 200,
+          "attack": 15,
+          "isBoss": true
+        }
+      ]
+    },
+
+    {
+      "name": "Shaft5",
+      "description": "A shadowy tunnel filled with danger.",
+      "connections": {
+        "big": "BigRoom",
+        "side": "SideRoom3"
+      },
+      "type": "combat",
+      "npcs": [
+        {
+          "name": "Crawler",
+          "isEnemy": true,
+          "hp": 160,
+          "attack": 12
+        }
+      ]
+    },
+
+    {
+      "name": "SideRoom3",
+      "description": "A hidden chamber with quests.",
+      "connections": {
+        "shaft5": "Shaft5",
+        "shaft6": "Shaft6"
+      },
+      "type": "quest",
+      "npcs": [
+        {
+          "name": "Hermit",
+          "dialogue": "Solve my challenge and you will be rewarded."
+        }
+      ]
+    },
+
+    {
+      "name": "Shaft6",
+      "description": "An empty tunnel.",
+      "connections": {
+        "back": "SideRoom3",
+        "next": "SideRoom4"
+      },
+      "type": "safe"
+    },
+
+    {
+      "name": "SideRoom4",
+      "description": "A room guarded by a powerful miniboss.",
+      "connections": {
+        "shaft6": "Shaft6"
+      },
+      "type": "boss_gate",
+      "boss": {
+        "name": "MiniBoss3",
+        "isEnemy": true,
+        "hp": 200,
+        "attack": 15,
+        "isBoss": true
+      }
+    },
+
+    {
+      "name": "FinalRoom",
+      "description": "The final chamber. A terrifying presence awaits.",
+      "connections": {
+        "back": "BigRoom"
+      },
+      "type": "final",
+      "boss": {
+        "name": "FinalBoss",
+        "isEnemy": true,
+        "hp": 500,
+        "attack": 25,
+        "isBoss": true
+      }
     }
   ]
 }

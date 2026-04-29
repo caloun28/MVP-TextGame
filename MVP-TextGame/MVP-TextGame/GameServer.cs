@@ -1,12 +1,13 @@
-﻿using System;
+﻿using MVP_TextGame.Models;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace MVP_TextGame
 {
@@ -80,11 +81,11 @@ namespace MVP_TextGame
                 if (playerName == null) return;
 
                 player = new Player(playerName, client, reader, writer);
-                var startRoom = _map?.GetRoom("Start");
+                var startRoom = _map?.GetRoom("Spawn");
 
                 if (startRoom == null)
                 {
-                    throw new Exception("Start room not found! Check map.json loading.");
+                    throw new Exception("Spawn room not found! Check map.json loading.");
                 }
 
                 player.CurrentRoom = startRoom;
@@ -210,6 +211,9 @@ namespace MVP_TextGame
                     continue;
                 }
 
+                await HandleQuest(player, input);
+
+
                 string[] parts = input.Split(' ', 2);
                 string command = parts[0].ToLower();
                 string argument = parts.Length > 1 ? parts[1] : "";
@@ -235,6 +239,9 @@ namespace MVP_TextGame
                         await player.Writer.WriteLineAsync("exit - Exit the game");
                         await player.Writer.WriteLineAsync("go - Move to an available room");
                         await player.Writer.WriteLineAsync("talk - Starts a dialog with an NPC");
+                        await player.Writer.WriteLineAsync("attack - Start attacking an enemy");
+                        await player.Writer.WriteLineAsync("inventory - show inventory");
+                        await player.Writer.WriteLineAsync("equip - equip an item");
                         break;
 
                     case "whisper":
@@ -247,6 +254,18 @@ namespace MVP_TextGame
 
                     case "talk":
                         await HandleTalk(player);
+                        break;
+
+                    case "attack":
+                        await HandleAttack(player);
+                        break;
+
+                    case "inventory":
+                        await ShowInventory(player);
+                        break;
+
+                    case "equip":
+                        await HandleEquip(player, argument);
                         break;
 
                     default:
@@ -327,67 +346,136 @@ namespace MVP_TextGame
             await receiver.Writer.WriteLineAsync($"[Whisper from {sender.Name}]: {message}");
         }
 
-        private async Task HandleGo(Player player, string direction)
+        private async Task HandleGo(Player player, string roomName)
         {
-            if (string.IsNullOrWhiteSpace(direction))
+            if (string.IsNullOrWhiteSpace(roomName))
             {
-                await player.Writer.WriteLineAsync("Usage: go <direction>");
+                await player.Writer.WriteLineAsync("Usage: go <room name>");
                 return;
             }
 
             var currentRoom = player.CurrentRoom;
 
-            if (currentRoom.Connections == null || !currentRoom.Connections.ContainsKey(direction))
+            if (currentRoom.Connections == null || currentRoom.Connections.Count == 0)
             {
-                await player.Writer.WriteLineAsync("You can't go that way.");
+                await player.Writer.WriteLineAsync("No available paths.");
                 return;
             }
 
-            string nextRoomName = currentRoom.Connections[direction];
-            var nextRoom = _map.GetRoom(nextRoomName);
+            var target = currentRoom.Connections
+                .FirstOrDefault(x => x.Value.Equals(roomName, StringComparison.OrdinalIgnoreCase));
+
+            if (target.Value == null)
+            {
+                await player.Writer.WriteLineAsync("You can't go there.");
+                await ShowAvailableRooms(player);
+                return;
+            }
+
+            var nextRoom = _map.GetRoom(target.Value);
 
             if (nextRoom == null)
             {
-                await player.Writer.WriteLineAsync("Room does not exist.");
+                await player.Writer.WriteLineAsync("Room not found.");
                 return;
             }
 
-            player.CurrentRoom = nextRoom;
+            if (nextRoom.Blocked)
+            {
+                await player.Writer.WriteLineAsync("The path is blocked. You need to clear it first.");
+                return;
+            }
 
-            await player.Writer.WriteLineAsync($"You moved to {nextRoom.Name}");
+            if (nextRoom.Type == "final" && !player.HasKey)
+            {
+                await player.Writer.WriteLineAsync("The door is locked. You need a key.");
+                return;
+            }
 
-            await ShowRoom(player);
+            if (nextRoom.Boss != null)
+            {
+                player.CurrentEnemy = nextRoom.Boss;
+                player.CurrentEnemyHP = nextRoom.Boss.HP;
+                player.InCombat = true;
+
+                await player.Writer.WriteLineAsync($"A boss blocks your path: {nextRoom.Boss.Name}");
+                return;
+            }
+
+            await EnterRoom(player, nextRoom);
         }
 
         private async Task ShowRoom(Player player)
         {
             var room = player.CurrentRoom;
 
-            await player.Writer.WriteLineAsync($"You are in: {room.Name}");
+            await player.Writer.WriteLineAsync($"\n=== {room.Name} ===");
             await player.Writer.WriteLineAsync(room.Description);
 
-            string exits = string.Join(", ", room.Connections.Keys);
-            await player.Writer.WriteLineAsync($"Exits: {exits}");
-
-            var playersHere = _activePlayers
-                .Where(p => p != player && p.CurrentRoom == room)
-                .Select(p => p.Name)
-                .ToList();
-
-            if (playersHere.Count > 0)
-                await player.Writer.WriteLineAsync("Players here: " + string.Join(", ", playersHere));
-            else
-                await player.Writer.WriteLineAsync("Players here: none");
+            await ShowAvailableRooms(player);
 
             if (room.Npcs != null && room.Npcs.Count > 0)
             {
-                await player.Writer.WriteLineAsync("NPCs here: " +
-                    string.Join(", ", room.Npcs.Select(n => n.Name)));
+                await player.Writer.WriteLineAsync("NPCs here:");
+
+                foreach (var npc in room.Npcs)
+                {
+                    await player.Writer.WriteLineAsync($"- {npc.Name}");
+                }
             }
             else
             {
-                await player.Writer.WriteLineAsync("NPCs here: none");
+                await player.Writer.WriteLineAsync("No NPCs here.");
             }
+        }
+        private async Task ShowAvailableRooms(Player player)
+        {
+            var room = player.CurrentRoom;
+
+            if (room.Connections == null || room.Connections.Count == 0)
+            {
+                await player.Writer.WriteLineAsync("No exits.");
+                return;
+            }
+
+            await player.Writer.WriteLineAsync("Available rooms:");
+
+            foreach (var connection in room.Connections.Values)
+            {
+                await player.Writer.WriteLineAsync($"- {connection}");
+            }
+        }
+        private async Task EnterRoom(Player player, Room room)
+        {
+            player.CurrentRoom = room;
+
+            await player.Writer.WriteLineAsync($"\n=== {room.Name} ===");
+            await player.Writer.WriteLineAsync(room.Description);
+
+            if (room.Type == "final" && !player.HasKey)
+            {
+                await player.Writer.WriteLineAsync("The door is locked. You need a KEY.");
+                player.CurrentRoom = null;
+                return;
+            }
+
+            if (room.Blocked)
+            {
+                await player.Writer.WriteLineAsync("This path is blocked.");
+                return;
+            }
+
+            if (room.Boss != null && room.Boss.HP > 0)
+            {
+                player.CurrentEnemy = room.Boss;
+                player.CurrentEnemyHP = room.Boss.HP;
+                player.InCombat = true;
+
+                await player.Writer.WriteLineAsync($"Boss blocks the path: {room.Boss.Name}");
+                return;
+            }
+
+            await ShowRoom(player);
         }
 
         private async Task HandleTalk(Player player)
@@ -410,6 +498,178 @@ namespace MVP_TextGame
             }
 
             await player.Writer.WriteLineAsync("Type number:");
+        }
+
+        private async Task HandleAttack(Player player)
+        {
+            if (player.CurrentEnemy == null)
+            {
+                await player.Writer.WriteLineAsync("There is nothing to attack.");
+                return;
+            }
+
+            Random rnd = new Random();
+
+            int playerDamage = player.AttackStrength + rnd.Next(-2, 5);
+            int enemyDamage = player.CurrentEnemy.Attack + rnd.Next(-2, 3);
+
+            player.CurrentEnemyHP -= playerDamage;
+
+            await player.Writer.WriteLineAsync($"You deal {playerDamage} damage to {player.CurrentEnemy.Name}.");
+
+            if (player.CurrentEnemyHP <= 0)
+            {
+                await player.Writer.WriteLineAsync($"{player.CurrentEnemy.Name} was defeated!");
+
+                player.CurrentEnemy = null;
+                player.InCombat = false;
+
+                await GiveLoot(player);
+                return;
+            }
+
+            player.CurrentHealth -= enemyDamage;
+
+            await player.Writer.WriteLineAsync($"{player.CurrentEnemy.Name} hits you for {enemyDamage}.");
+
+            if (player.CurrentHealth <= 0)
+            {
+                await HelpOnPlayerDeath(player);
+            }
+
+            if (player.CurrentEnemy != null && player.CurrentEnemy.HP <= 0)
+            {
+                if (player.CurrentEnemy.Name.Contains("MiniBoss 1"))
+                    player.Quests["Q1"] = true;
+
+                if (player.CurrentEnemy.Name.Contains("MiniBoss 3"))
+                    player.HasKey = true;
+
+                player.CurrentEnemy = null;
+                player.InCombat = false;
+            }
+        }
+        private async Task GiveLoot(Player player)
+        {
+            Random rnd = new Random();
+
+            if (rnd.Next(0, 100) < 50)
+            {
+                player.Inventory.Add("Healing Potion");
+            }
+
+            if (rnd.Next(0, 100) < 30)
+            {
+                player.Inventory.Add("Iron Weapon");
+                player.AttackStrength = 8;
+            }
+
+            if (rnd.Next(0, 100) < 20)
+            {
+                player.HasKey = true;
+                await player.Writer.WriteLineAsync("You found THE KEY!");
+            }
+        }
+        private async Task ShowInventory(Player player)
+        {
+            await player.Writer.WriteLineAsync("=== INVENTORY ===");
+
+            if (player.Inventory.Count == 0)
+            {
+                await player.Writer.WriteLineAsync("Empty");
+                return;
+            }
+
+            for (int i = 0; i < player.Inventory.Count; i++)
+            {
+                await player.Writer.WriteLineAsync($"{i + 1}. {player.Inventory[i]}");
+            }
+
+            await player.Writer.WriteLineAsync("Use: equip <number>");
+        }
+
+        private async Task HandleEquip(Player player, string arg)
+        {
+            if (!int.TryParse(arg, out int index))
+            {
+                await player.Writer.WriteLineAsync("Invalid item number.");
+                return;
+            }
+
+            index--;
+
+            if (index < 0 || index >= player.Inventory.Count)
+            {
+                await player.Writer.WriteLineAsync("Out of range.");
+                return;
+            }
+
+            string item = player.Inventory[index];
+
+            if (item.Contains("Weapon"))
+            {
+                player.EquippedWeapon = item;
+                player.AttackStrength = 8;
+                await player.Writer.WriteLineAsync($"Equipped weapon: {item}");
+            }
+            else if (item.Contains("Armor"))
+            {
+                await player.Writer.WriteLineAsync($"Equipped armor: {item}");
+            }
+            else
+            {
+                await player.Writer.WriteLineAsync($"Used item: {item}");
+            }
+
+            if (item == "Iron Pickaxe")
+            {
+                var shaft1 = _map.GetRoom("Shaft1");
+                if (shaft1 != null)
+                {
+                    shaft1.Blocked = false;
+                }
+            }
+        }
+        private async Task HandleQuest(Player player, string input)
+        {
+            var room = player.CurrentRoom;
+
+            if (room == null || room.Npcs == null)
+                return;
+
+            foreach (var npc in room.Npcs)
+            {
+                if (npc.Name.Contains("NPC 2") && !player.Quests["Q1"])
+                {
+                    if (input.ToLower().Contains("done"))
+                    {
+                        player.Quests["Q1"] = true;
+                        player.Inventory.Add("Iron Pickaxe");
+                        await player.Writer.WriteLineAsync("Quest 1 completed! You got Iron Pickaxe.");
+                        return;
+                    }
+                }
+
+                if (npc.Name.Contains("NPC 3") && !player.Quests["Q3"])
+                {
+                    if (input.ToLower().Contains("growth"))
+                    {
+                        player.Quests["Q3"] = true;
+                        await player.Writer.WriteLineAsync("Correct! Quest 3 done.");
+                        return;
+                    }
+                }
+
+                if (npc.Name.Contains("NPC 4") && !player.Quests["Q4"])
+                {
+                    if (input.ToLower().Contains("done"))
+                    {
+                        player.Quests["Q4"] = true;
+                        await player.Writer.WriteLineAsync("Puzzle solved! Quest 4 done.");
+                        return;
+                    }
+                }
+            }
         }
     }
 }
