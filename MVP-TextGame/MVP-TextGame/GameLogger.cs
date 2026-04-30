@@ -26,7 +26,7 @@ namespace MVP_TextGame
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"!!! CHYBA LOGOVÁNÍ DO SOUBORU: {ex.Message}");
+                    Console.WriteLine($"!!! ERROR LOGGING TO FILE: {ex.Message}");
                 }
             }
         }

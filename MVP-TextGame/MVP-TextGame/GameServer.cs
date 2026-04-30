@@ -35,7 +35,7 @@ namespace MVP_TextGame
             });
 
             if (_map?.Rooms == null)
-                throw new Exception("Map failed to load (Rooms is null)");
+                throw new Exception("Map failed to load [Rooms is null]");
 
             _engine = new GameEngine(_map, _activePlayers);
         }
@@ -47,18 +47,18 @@ namespace MVP_TextGame
             try
             {
                 listener.Start();
-                GameLogger.Log($"[SERVER]: Běží na portu {_port}. Čekám na hráče...");
+                GameLogger.Log($"[SERVER]: Running on port {_port}. Waiting for players...");
 
                 while (true)
                 {
                     TcpClient client = await listener.AcceptTcpClientAsync();
-                    GameLogger.Log($"[NETWORK]: Připojil se nový klient z endpointu {client.Client.RemoteEndPoint}");
+                    GameLogger.Log($"[NETWORK]: A new user has joined from an endpointu {client.Client.RemoteEndPoint}");
 
                     if (_activePlayers.Count >= _maxPlayers)
                     {
                         using (StreamWriter writer = new StreamWriter(client.GetStream(), Encoding.UTF8) { AutoFlush = true })
                         {
-                            await writer.WriteLineAsync("Both players are joined, game is already running");
+                            await writer.WriteLineAsync("\x1b[32mBoth players are joined, game is already running\x1b[0m");
                         }
                     }
 
@@ -67,7 +67,7 @@ namespace MVP_TextGame
             }
             catch (Exception e)
             {
-                GameLogger.Log($"[SERVER ERROR]: Kritická chyba na straně serveru: {e.Message}");
+                GameLogger.Log($"[SERVER ERROR]: Critical error on server side: {e.Message}");
             }
         }
 
@@ -88,7 +88,7 @@ namespace MVP_TextGame
 
                 if (startRoom == null)
                 {
-                    throw new Exception("Spawn room not found! Check map.json loading.");
+                    throw new Exception("\x1b[91mSpawn room not found! Check map.json loading.\x1b[0m");
                 }
 
                 player.CurrentRoom = startRoom;
@@ -103,7 +103,7 @@ namespace MVP_TextGame
             }
             catch (Exception ex)
             {
-                GameLogger.Log($"[NETWORK]: Klient ({endpoint}) byl nečekaně odpojen: {ex.Message}");
+                GameLogger.Log($"[NETWORK]: Client ({endpoint}) has unexpectedly disconnected: {ex.Message}");
             }
             finally
             {
@@ -124,8 +124,8 @@ namespace MVP_TextGame
             {
                 string playerName = "";
 
-                await writer.WriteLineAsync("Welcome to the abandoned mine");
-                await writer.WriteLineAsync("Enter [1] to login or [2] to register");
+                await writer.WriteLineAsync("\x1b[92mWelcome to the ABANDONED MINE!\x1b[0m");
+                await writer.WriteLineAsync("\x1b[32mEnter [1] to login or [2] to register\x1b[0m");
 
                 string choice = await reader.ReadLineAsync();
 
@@ -147,17 +147,17 @@ namespace MVP_TextGame
 
                             if (isAlreadyPlaying)
                             {
-                                await writer.WriteLineAsync("This account is already logged in from another location!");
-                                await writer.WriteLineAsync("Please try again or use a different account.\n");
+                                await writer.WriteLineAsync("\x1b[32mThis account is already logged in from another location!\x1b[0m");
+                                await writer.WriteLineAsync("\x1b[32mPlease try again or use a different account.\n\x1b[0m");
                                 continue;
                             }
 
-                            await writer.WriteLineAsync("Login successful");
+                            await writer.WriteLineAsync("\x1b[32mLogin successful\x1b[0m");
                             return playerName;
                         }
                         else
                         {
-                            await writer.WriteLineAsync("Invalid username or password. Try again.");
+                            await writer.WriteLineAsync("\x1b[32mInvalid username or password. Try again.\x1b[0m");
                         }
                         break;
 
@@ -169,17 +169,17 @@ namespace MVP_TextGame
 
                         if (_userManager.Register(playerName, newPassword))
                         {
-                            await writer.WriteLineAsync("Registration successful. You are now logged in.");
+                            await writer.WriteLineAsync("\x1b[92mRegistration successful. You are now logged in.\x1b[0m");
                             return playerName;
                         }
                         else
                         {
-                            await writer.WriteLineAsync("Username already exists. Try again.");
+                            await writer.WriteLineAsync("\x1b[32mUsername already exists. Try again.\x1b[0m");
                         }
                         break;
 
                     default:
-                        await writer.WriteLineAsync("Invalid choice. Please enter [1] to login or [2] to register.");
+                        await writer.WriteLineAsync("\x1b[32mInvalid choice. Please enter [1] to login or [2] to register.\x1b[0m");
                         break;
                 }
             }
@@ -195,7 +195,7 @@ namespace MVP_TextGame
 
                 if (string.IsNullOrEmpty(input) || input.ToLower() == "exit")
                 {
-                    await player.Writer.WriteLineAsync("Exiting the game. Goodbye!");
+                    await player.Writer.WriteLineAsync("\x1b[32mExiting the game. Goodbye!\x1b[0m");
                     isPlaying = false;
                     break;
                 }
@@ -207,8 +207,8 @@ namespace MVP_TextGame
         {
             if (_activePlayers.Count < _maxPlayers)
             {
-                await player.Writer.WriteLineAsync($"You are connected as {player.Name}.");
-                await player.Writer.WriteLineAsync("Waiting for another player to join...");
+                await player.Writer.WriteLineAsync($"\x1b[32mYou are connected as {player.Name}.\x1b[0m");
+                await player.Writer.WriteLineAsync("\x1b[32mWaiting for another player to join...\x1b[0m");
 
                 while (_activePlayers.Count < _maxPlayers)
                 {
@@ -216,8 +216,8 @@ namespace MVP_TextGame
                 }
             }
 
-            await player.Writer.WriteLineAsync("Both players are connected. Starting the game...");
-            await player.Writer.WriteLineAsync("For help type 'help'");
+            await player.Writer.WriteLineAsync("\x1b[32mBoth players are connected. Starting the game...\x1b[0m");
+            await player.Writer.WriteLineAsync("\x1b[92mFor help type 'help'\x1b[0m");
 
             await _engine.ShowRoom(player);
         }
@@ -229,7 +229,7 @@ namespace MVP_TextGame
                 if (_activePlayers.Contains(player))
                 {
                     _activePlayers.Remove(player);
-                    GameLogger.Log($"[NETWORK]: Hráč {player.Name} se odpojil ze hry.");
+                    GameLogger.Log($"[NETWORK]: Player {player.Name} has left the game.");
                 }
             }
             player.Client.Close();

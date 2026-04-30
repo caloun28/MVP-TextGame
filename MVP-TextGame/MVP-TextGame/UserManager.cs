@@ -25,11 +25,11 @@ namespace MVP_TextGame
                 string json = File.ReadAllText(_filePath);
 
                 _users = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
-                GameLogger.Log($"[UserManager]: Načteno {_users.Count} uživatelů z disku.");
+                GameLogger.Log($"[UserManager]: Loaded {_users.Count} users from disk.");
             }
             else
             {
-                GameLogger.Log("[UserManager]: Soubor users.json nenalezen, začínáme s prázdnou databází.");
+                GameLogger.Log("[UserManager]: File users.json not found. Starting with an empty database.");
             }
         }
 
@@ -39,11 +39,11 @@ namespace MVP_TextGame
             {
                 string json = JsonSerializer.Serialize(_users, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(_filePath, json);
-                GameLogger.Log($"[DATABASE]: Data uživatelů byla úspěšně zapsána. Celkem hráčů: {_users.Count}");
+                GameLogger.Log($"[DATABASE]: User data has been successfully saved. Total players: {_users.Count}");
             }
             catch (Exception ex)
             {
-                GameLogger.Log($"[DATABASE ERROR]: Nepodařilo se uložit uživatele: {ex.Message}");
+                GameLogger.Log($"[DATABASE ERROR]: Failed to save the user: {ex.Message}");
             }
         }
 
@@ -51,7 +51,7 @@ namespace MVP_TextGame
         {
             if (_users.ContainsKey(username))
             {
-                GameLogger.Log($"[UserManager]: Pokus o registraci existujícího jména '{username}'.");
+                GameLogger.Log($"[UserManager]: Attempt to register an existing username '{username}'.");
                 return false;
             }
 
@@ -60,7 +60,7 @@ namespace MVP_TextGame
 
             SaveUsers();
 
-            GameLogger.Log($"[UserManager]: Nový uživatel '{username}' byl úspěšně zaregistrován.");
+            GameLogger.Log($"[UserManager]: New user '{username}' has been registered succesfully.");
             return true;
         }
 
@@ -68,7 +68,7 @@ namespace MVP_TextGame
         {
             if (!_users.ContainsKey(username))
             {
-                GameLogger.Log($"[UserManager]: Pokus o přihlášení na neexistující účet '{username}'.");
+                GameLogger.Log($"[UserManager]: Attempt to log in to a non-existent account '{username}'.");
                 return false;
             }
 
@@ -77,11 +77,11 @@ namespace MVP_TextGame
 
             if (success)
             {
-                GameLogger.Log($"[UserManager]: Uživatel '{username}' se úspěšně přihlásil.");
+                GameLogger.Log($"[UserManager]: User '{username}' has succesfully loged in.");
             }
             else
             {
-                GameLogger.Log($"[UserManager]: Špatné heslo pro uživatele '{username}'.");
+                GameLogger.Log($"[UserManager]: Incorrect password for user '{username}'.");
             }
 
             return success;

@@ -34,23 +34,23 @@ namespace MVP_TextGame
                     if (index >= 0 && index < player.TalkOptions.Count)
                     {
                         var npc = player.TalkOptions[index];
-                        GameLogger.Log($"[DIALOGUE]: {player.Name} promluvil s NPC {npc.Name}.");
-                        await player.Writer.WriteLineAsync($"{npc.Name} says: {npc.Dialogue}");
+                        GameLogger.Log($"[DIALOGUE]: {player.Name} has talked to npc {npc.Name}.");
+                        await player.Writer.WriteLineAsync($"\x1b[38;5;208m{npc.Name} \x1b[38;5;118msays: \x1b[38;2;255;105;180m{npc.Dialogue}\x1b[0m");
 
                         var otherPlayers = _activePlayers.Where(p => p.CurrentRoom == player.CurrentRoom && p != player);
                         foreach (var p in otherPlayers)
                         {
-                            await p.Writer.WriteLineAsync($"{player.Name} is talking to {npc.Name}. {npc.Name} says: {npc.Dialogue}");
+                            await p.Writer.WriteLineAsync($"\x1b[38;5;226m{player.Name} \x1b[38;5;118mis talking to \x1b[38;5;208m{npc.Name}. \x1b[38;5;208m{npc.Name} \x1b[38;5;118msays: \x1b[38;2;255;105;180m{npc.Dialogue}\x1b[0m");
                         }
                     }
                     else
                     {
-                        await player.Writer.WriteLineAsync("Invalid selection.");
+                        await player.Writer.WriteLineAsync("\x1b[32mInvalid selection.\x1b[0m");
                     }
                 }
                 else
                 {
-                    await player.Writer.WriteLineAsync("Please enter a number.");
+                    await player.Writer.WriteLineAsync("\x1b[32mPlease enter a number.\x1b[0m");
                 }
 
                 player.TalkOptions = null;
@@ -68,26 +68,26 @@ namespace MVP_TextGame
                 return;
             }
 
-            GameLogger.Log($"[ACTION]: Hráč {player.Name} použil příkaz: {command} {argument}");
-            Console.WriteLine($"Received command from {player.Name}: {command}");
+            GameLogger.Log($"[ACTION]: Player {player.Name} has used a command: {command} {argument}");
+            Console.WriteLine($"\u001b[38;5;118mReceived command from \u001b[38;5;226m{player.Name}: {command}\x1b[0m");
 
             switch (command)
             {
                 case "exit":
-                    await player.Writer.WriteLineAsync("Exiting the game. Goodbye!");
+                    await player.Writer.WriteLineAsync("\x1b[32mExiting the game. Goodbye!\x1b[0m");
                     break;
 
                 case "help":
-                    await player.Writer.WriteLineAsync("Available commands:");
-                    await player.Writer.WriteLineAsync("help - Show this help message");
-                    await player.Writer.WriteLineAsync("whisper <message> - Send message to other player");
-                    await player.Writer.WriteLineAsync("exit - Exit the game");
-                    await player.Writer.WriteLineAsync("go - Move to an available room");
-                    await player.Writer.WriteLineAsync("talk - Starts a dialog with an NPC");
-                    await player.Writer.WriteLineAsync("attack - Start attacking an enemy");
-                    await player.Writer.WriteLineAsync("inventory - show inventory");
-                    await player.Writer.WriteLineAsync("equip - equip an item");
-                    await player.Writer.WriteLineAsync("stats - show your current statistics");
+                    await player.Writer.WriteLineAsync("\x1b[32mAvailable commands:\x1b[0m");
+                    await player.Writer.WriteLineAsync("help - \x1b[32mShow this help message\x1b[0m");
+                    await player.Writer.WriteLineAsync("whisper <message> - \x1b[32mSend message to other player\x1b[0m");
+                    await player.Writer.WriteLineAsync("exit - \x1b[32mExit the game\x1b[0m");
+                    await player.Writer.WriteLineAsync("go - \x1b[32mMove to an available room\x1b[0m");
+                    await player.Writer.WriteLineAsync("talk - \x1b[32mStarts a dialog with an NPC\x1b[0m");
+                    await player.Writer.WriteLineAsync("attack - \x1b[32mStart attacking an enemy\x1b[0m");
+                    await player.Writer.WriteLineAsync("inventory - \x1b[32mShow inventory\x1b[0m");
+                    await player.Writer.WriteLineAsync("equip - \x1b[32mEquip an item\x1b[0m");
+                    await player.Writer.WriteLineAsync("stats - \x1b[32mShow your current statistics\x1b[0m");
                     break;
 
                 case "whisper":
@@ -126,14 +126,14 @@ namespace MVP_TextGame
             player.Deaths++;
             player.CurrentHealth = player.MaxHealth;
 
-            GameLogger.Log($"[DEATH]: Hráč {player.Name} zemřel! (Počet smrtí: {player.Deaths})");
+            GameLogger.Log($"[DEATH]: Player {player.Name} has died! (Death count: {player.Deaths})");
 
-            await player.Writer.WriteLineAsync($"YOU HAVE DIED!!");
-            await player.Writer.WriteLineAsync("You have been respawned at the start of the mine.");
+            await player.Writer.WriteLineAsync($"\u001b[38;5;118mYOU HAVE DIED!!\x1b[0m");
+            await player.Writer.WriteLineAsync("\u001b[38;5;118mYou have been respawned at the start of the mine.\u001b[0m");
 
             if (player.Deaths == 3)
             {
-                await player.Writer.WriteLineAsync("[HELP]: Try to find better weapons and do sidequests.");
+                await player.Writer.WriteLineAsync("[HELP]: \u001b[32mTry to find better weapons and do sidequests.\u001b[0m");
             }
         }
 
@@ -141,7 +141,7 @@ namespace MVP_TextGame
         {
             if (string.IsNullOrWhiteSpace(message))
             {
-                await sender.Writer.WriteLineAsync("Usage: whisper <message>");
+                await sender.Writer.WriteLineAsync("\u001b[32mUsage: whisper <message>\u001b[0m");
                 return;
             }
 
@@ -154,19 +154,19 @@ namespace MVP_TextGame
 
             if (receiver == null)
             {
-                await sender.Writer.WriteLineAsync("No other player connected.");
+                await sender.Writer.WriteLineAsync("\u001b[32mNo other player connected.\u001b[0m");
                 return;
             }
 
-            GameLogger.Log($"[CHAT]: {sender.Name} whispered to {receiver.Name}");
-            await receiver.Writer.WriteLineAsync($"[Whisper from {sender.Name}]: {message}");
+            GameLogger.Log($"[CHAT]: {sender.Name} whispered to {receiver.Name}\u001b[0m");
+            await receiver.Writer.WriteLineAsync($"\u001b[32m[Whisper from \u001b[38;5;226m{sender.Name}]: \u001b[0m{message}\u001b[0m");
         }
 
         public async Task HandleGo(Player player, string roomName)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
-                await player.Writer.WriteLineAsync("Usage: go <room name>");
+                await player.Writer.WriteLineAsync("\u001b[32mUsage: go <room name>\u001b[0m");
                 return;
             }
 
@@ -174,7 +174,7 @@ namespace MVP_TextGame
 
             if (currentRoom.Connections == null || currentRoom.Connections.Count == 0)
             {
-                await player.Writer.WriteLineAsync("No available paths.");
+                await player.Writer.WriteLineAsync("\u001b[32mNo available paths.\u001b[0m");
                 return;
             }
 
@@ -183,7 +183,7 @@ namespace MVP_TextGame
 
             if (target.Value == null)
             {
-                await player.Writer.WriteLineAsync("You can't go there.");
+                await player.Writer.WriteLineAsync("\u001b[32mYou can't go there.\u001b[0m");
                 await ShowAvailableRooms(player);
                 return;
             }
@@ -194,19 +194,19 @@ namespace MVP_TextGame
 
             if (nextRoom.Blocked)
             {
-                await player.Writer.WriteLineAsync($"The path is blocked by {nextRoom.BlockedBy}. You need to clear it first.");
+                await player.Writer.WriteLineAsync($"\u001b[38;5;118mThe path is blocked by \u001b[0m{nextRoom.BlockedBy}. \u001b[38;5;118mYou have to figure out how to get in.\u001b[0m");
                 return;
             }
 
             if (nextRoom.Type == "final" && !player.HasKey)
             {
-                await player.Writer.WriteLineAsync("The door is locked. You need a key.");
+                await player.Writer.WriteLineAsync("\u001b[38;5;118mThe door is locked. You need a key.\u001b[0m");
                 return;
             }
 
-            await Broadcast($"{player.Name} left the room.", currentRoom);
+            await Broadcast($"\u001b[38;5;226m{player.Name} \u001b[38;5;118mleft the room.\u001b[0m", currentRoom);
 
-            GameLogger.Log($"[MOVEMENT]: {player.Name} se přesunul z {currentRoom.Name} do {nextRoom.Name}");
+            GameLogger.Log($"[MOVEMENT]: {player.Name} has moved from {currentRoom.Name} to {nextRoom.Name}");
             await EnterRoom(player, nextRoom);
         }
 
@@ -221,7 +221,7 @@ namespace MVP_TextGame
 
             if (room.Npcs != null && room.Npcs.Count > 0)
             {
-                await player.Writer.WriteLineAsync("NPCs here:");
+                await player.Writer.WriteLineAsync("\u001b[32mNPCs here:\u001b[0m");
 
                 foreach (var npc in room.Npcs)
                 {
@@ -230,7 +230,7 @@ namespace MVP_TextGame
             }
             else
             {
-                await player.Writer.WriteLineAsync("No NPCs here.");
+                await player.Writer.WriteLineAsync("\u001b[32mNo NPCs here.\u001b[0m");
             }
         }
         public async Task ShowAvailableRooms(Player player)
@@ -239,11 +239,11 @@ namespace MVP_TextGame
 
             if (room.Connections == null || room.Connections.Count == 0)
             {
-                await player.Writer.WriteLineAsync("No exits.");
+                await player.Writer.WriteLineAsync("\u001b[32mNo exits.\u001b[0m");
                 return;
             }
 
-            await player.Writer.WriteLineAsync("Available rooms:");
+            await player.Writer.WriteLineAsync("\u001b[32mAvailable rooms:\u001b[0m");
 
             foreach (var connection in room.Connections.Values)
             {
@@ -260,13 +260,13 @@ namespace MVP_TextGame
             var otherPlayers = _activePlayers.Where(p => p.CurrentRoom == room && p != player);
             foreach (var p in otherPlayers)
             {
-                await p.Writer.WriteLineAsync($"\n{player.Name} entered the room.");
+                await p.Writer.WriteLineAsync($"\n\u001b[38;5;226m{player.Name} \u001b[38;5;118mentered the room.\u001b[0m");
             }
 
             if (room.Boss != null && room.Boss.HP > 0)
             {
                 player.InCombat = true;
-                await player.Writer.WriteLineAsync($"A boss blocks your path: {room.Boss.Name} (HP: {room.Boss.HP})");
+                await player.Writer.WriteLineAsync($"\u001b[38;5;118mA boss blocks your path: \u001b[38;5;118m{room.Boss.Name} \x1b[91m(HP: {room.Boss.HP})\x1b[0m");
                 return;
             }
 
@@ -274,7 +274,7 @@ namespace MVP_TextGame
             if (enemy != null)
             {
                 player.InCombat = true;
-                await player.Writer.WriteLineAsync($"Watch out! An enemy is here: {enemy.Name} (HP: {enemy.HP})");
+                await player.Writer.WriteLineAsync($"\u001b[38;5;118mWatch out! An enemy is here: \x1b[38;5;208m{enemy.Name} \x1b[91m(HP: {enemy.HP})\x1b[0m");
             }
 
             await ShowRoom(player);
@@ -286,20 +286,20 @@ namespace MVP_TextGame
 
             if (room.Npcs == null || room.Npcs.Count == 0)
             {
-                await player.Writer.WriteLineAsync("There is no one to talk to here.");
+                await player.Writer.WriteLineAsync("\u001b[38;5;118mThere is no one to talk to here.\u001b[0m");
                 return;
             }
 
             player.TalkOptions = room.Npcs;
 
-            await player.Writer.WriteLineAsync("Who do you want to talk to?");
+            await player.Writer.WriteLineAsync("\u001b[38;5;118mWho do you want to talk to?\u001b[0m");
 
             for (int i = 0; i < room.Npcs.Count; i++)
             {
                 await player.Writer.WriteLineAsync($"{i + 1}. {room.Npcs[i].Name}");
             }
 
-            await player.Writer.WriteLineAsync("Type number:");
+            await player.Writer.WriteLineAsync("\u001b[32mType number:\u001b[0m");
         }
 
         public async Task HandleAttack(Player player)
@@ -314,7 +314,7 @@ namespace MVP_TextGame
 
             if (target == null)
             {
-                await player.Writer.WriteLineAsync("There is nothing to attack here.");
+                await player.Writer.WriteLineAsync("\u001b[32mThere is nothing to attack here.\u001b[0m");
                 player.InCombat = false;
                 return;
             }
@@ -329,16 +329,16 @@ namespace MVP_TextGame
             {
                 if (target.HP <= 0)
                 {
-                    player.Writer.WriteLineAsync($"{target.Name} is already dead!").Wait();
+                    player.Writer.WriteLineAsync($"\x1b[38;5;208m{target.Name} \u001b[38;5;118mis already dead!\u001b[0m").Wait();
                     return;
                 }
 
                 target.HP -= playerDamage;
                 int remainingHP = Math.Max(0, target.HP);
 
-                GameLogger.Log($"[COMBAT]: {player.Name} zasáhl {target.Name} za {playerDamage} HP. Zůstává {remainingHP} HP.");
+                GameLogger.Log($"[COMBAT]: {player.Name} damaged {target.Name} by {playerDamage} HP. Remains {remainingHP} HP.");
 
-                Broadcast($"{player.Name} hits {target.Name} for {playerDamage} damage! (Enemy HP: {remainingHP})", room).Wait();
+                Broadcast($"\u001b[38;5;226m{player.Name} \u001b[38;5;118mhits \x1b[38;5;208m{target.Name} \u001b[38;5;118mfor \x1b[91m{playerDamage} \u001b[38;5;118mdamage! \x1b[91m(Enemy HP: {remainingHP})\x1b[0m", room).Wait();
 
                 if (target.HP <= 0)
                 {
@@ -348,8 +348,8 @@ namespace MVP_TextGame
 
             if (enemyDefeated)
             {
-                GameLogger.Log($"[COMBAT]: {target.Name} byl poražen v {room.Name}!");
-                await Broadcast($"\n>>> {target.Name} was defeated! <<<", room);
+                GameLogger.Log($"[COMBAT]: {target.Name} has been defeated in {room.Name}!");
+                await Broadcast($"\n>>> \x1b[38;5;208m{target.Name} \u001b[38;5;118mwas defeated! \u001b[0m<<<", room);
 
                 foreach (var p in _activePlayers.Where(p => p.CurrentRoom == room))
                 {
@@ -358,18 +358,18 @@ namespace MVP_TextGame
 
                 if (target.Name.Contains("MiniBoss1")) player.Quests["Q1"] = true;
                 if (target.Name.Contains("MiniBoss3")) player.HasKey = true;
-                if (target.Name.Contains("FinalBoss")) await Broadcast("\nYOU HAVE DEFEATED THE KING ORG! YOU WON THE GAME!");
+                if (target.Name.Contains("FinalBoss")) await Broadcast("\n\u001b[38;5;118mYOU HAVE DEFEATED THE KING ORG! YOU WON THE GAME!\u001b[0m");
 
                 await GiveLoot(player);
                 return;
             }
 
             player.CurrentHealth -= enemyDamage;
-            await player.Writer.WriteLineAsync($"{target.Name} hits YOU for {enemyDamage} damage. (Your HP: {player.CurrentHealth})");
+            await player.Writer.WriteLineAsync($"\x1b[38;5;208m{target.Name} \u001b[38;5;118mhits YOU for \x1b[91m{enemyDamage} \u001b[38;5;118mdamage. \x1b[91m(Your HP: {player.CurrentHealth})\x1b[0m");
 
             if (player.CurrentHealth <= 0)
             {
-                await Broadcast($"{player.Name} was killed by {target.Name}!", room);
+                await Broadcast($"\u001b[38;5;226m{player.Name} \u001b[38;5;118mwas killed by \x1b[38;5;208m{target.Name}!\x1b[0m", room);
                 await HelpOnPlayerDeath(player);
             }
         }
@@ -381,30 +381,30 @@ namespace MVP_TextGame
             if (rnd.Next(0, 100) < 50)
             {
                 player.Inventory.Add("Healing Potion");
-                await player.Writer.WriteLineAsync("You found a Healing Potion!");
-                GameLogger.Log($"[LOOT]: {player.Name} našel Healing Potion.");
+                await player.Writer.WriteLineAsync("\u001b[38;5;118mYou found a Healing Potion!\u001b[0m");
+                GameLogger.Log($"[LOOT]: {player.Name} found a Healing Potion.");
             }
 
             if (rnd.Next(0, 100) < 30)
             {
                 player.Inventory.Add("Iron Weapon");
                 player.AttackStrength = 8;
-                await player.Writer.WriteLineAsync("You found an Iron Weapon!");
-                GameLogger.Log($"[LOOT]: {player.Name} našel Iron Weapon.");
+                await player.Writer.WriteLineAsync("\u001b[38;5;118mYou found an Iron Weapon!\u001b[0m");
+                GameLogger.Log($"[LOOT]: {player.Name} found an Iron Weapon.");
 
                 var otherPlayers = _activePlayers.Where(p => p.CurrentRoom == room && p != player);
                 foreach (var p in otherPlayers)
                 {
-                    await p.Writer.WriteLineAsync($"{player.Name} found a weapon in the loot!");
+                    await p.Writer.WriteLineAsync($"\u001b[38;5;226m{player.Name} \u001b[38;5;118mfound a weapon in the loot!\u001b[0m");
                 }
             }
 
             if (rnd.Next(0, 100) < 20)
             {
                 player.HasKey = true;
-                await player.Writer.WriteLineAsync("You found THE KEY!");
-                GameLogger.Log($"[LOOT]: {player.Name} NAŠEL KLÍČ!");
-                await Broadcast($"\n>>> {player.Name} FOUND THE VAULT KEY! <<<", room);
+                await player.Writer.WriteLineAsync("\u001b[38;5;118mYou found THE KEY!\u001b[0m");
+                GameLogger.Log($"[LOOT]: {player.Name} FOUND THE KEY!");
+                await Broadcast($"\n>>> \u001b[38;5;226m{player.Name} \u001b[38;5;118mFOUND THE VAULT KEY! \u001b[0m<<<", room);
             }
         }
         public async Task ShowInventory(Player player)
@@ -413,23 +413,23 @@ namespace MVP_TextGame
 
             if (player.Inventory.Count == 0)
             {
-                await player.Writer.WriteLineAsync("Empty");
+                await player.Writer.WriteLineAsync("\u001b[32mEmpty\u001b[0m");
                 return;
             }
 
             for (int i = 0; i < player.Inventory.Count; i++)
             {
-                await player.Writer.WriteLineAsync($"{i + 1}. {player.Inventory[i]}");
+                await player.Writer.WriteLineAsync($"\u001b[32m{i + 1}. {player.Inventory[i]}\u001b[0m");
             }
 
-            await player.Writer.WriteLineAsync("Use: equip <number>");
+            await player.Writer.WriteLineAsync("\u001b[32mUse: equip <number>\u001b[0m");
         }
 
         public async Task HandleEquip(Player player, string arg)
         {
             if (!int.TryParse(arg, out int index))
             {
-                await player.Writer.WriteLineAsync("Invalid item number.");
+                await player.Writer.WriteLineAsync("\u001b[32mInvalid item number.\u001b[0m");
                 return;
             }
 
@@ -437,7 +437,7 @@ namespace MVP_TextGame
 
             if (index < 0 || index >= player.Inventory.Count)
             {
-                await player.Writer.WriteLineAsync("Out of range.");
+                await player.Writer.WriteLineAsync("\u001b[32mOut of range.\u001b[0m");
                 return;
             }
 
@@ -450,14 +450,14 @@ namespace MVP_TextGame
                 player.CurrentHealth = player.MaxHealth;
                 player.Inventory.RemoveAt(index);
 
-                GameLogger.Log($"[ITEM]: {player.Name} použil Healing Potion.");
+                GameLogger.Log($"[ITEM]: {player.Name} used a Healing Potion.");
 
-                await player.Writer.WriteLineAsync("You drank a Healing Potion. Your HP is fully restored!");
+                await player.Writer.WriteLineAsync("\u001b[38;5;118mYou drank a Healing Potion. Your HP is fully restored!\u001b[0m");
 
                 var otherPlayers = _activePlayers.Where(p => p.CurrentRoom == room && p != player);
                 foreach (var p in otherPlayers)
                 {
-                    await p.Writer.WriteLineAsync($"{player.Name} drank a Healing Potion.");
+                    await p.Writer.WriteLineAsync($"\u001b[38;5;226m{player.Name} \u001b[38;5;118mdrank a Healing Potion.\u001b[0m");
                 }
                 return;
             }
@@ -466,29 +466,29 @@ namespace MVP_TextGame
             {
                 player.EquippedWeapon = item;
                 player.AttackStrength = 8;
-                GameLogger.Log($"[ITEM]: {player.Name} si vybavil {item}.");
-                await player.Writer.WriteLineAsync($"Equipped weapon: {item}");
+                GameLogger.Log($"[ITEM]: {player.Name} has equipped {item}.");
+                await player.Writer.WriteLineAsync($"\u001b[32mEquipped weapon: \u001b[0m{item}\u001b[0m");
 
                 var otherPlayers = _activePlayers.Where(p => p.CurrentRoom == room && p != player);
                 foreach (var p in otherPlayers)
                 {
-                    await p.Writer.WriteLineAsync($"{player.Name} equipped an {item}.");
+                    await p.Writer.WriteLineAsync($"\u001b[38;5;226m{player.Name} \u001b[38;5;118mequipped an \u001b[0m{item}\u001b[0m.");
                 }
             }
             else if (item.Contains("Armor"))
             {
-                GameLogger.Log($"[ITEM]: {player.Name} si oblékl {item}.");
-                await player.Writer.WriteLineAsync($"Equipped armor: {item}");
+                GameLogger.Log($"[ITEM]: {player.Name} has equipped {item}.");
+                await player.Writer.WriteLineAsync($"\u001b[32mEquipped armor: \u001b[0m{item}\u001b[0m");
 
                 var otherPlayers = _activePlayers.Where(p => p.CurrentRoom == room && p != player);
                 foreach (var p in otherPlayers)
                 {
-                    await p.Writer.WriteLineAsync($"{player.Name} put on {item}.");
+                    await p.Writer.WriteLineAsync($"\u001b[38;5;226m{player.Name} \u001b[38;5;118mput on \u001b[m{item}.\u001b[0m");
                 }
             }
             else
             {
-                await player.Writer.WriteLineAsync($"Used item: {item}");
+                await player.Writer.WriteLineAsync($"\u001b[32mUsed item: {item}\u001b[0m");
             }
 
             if (item == "Iron Pickaxe")
@@ -497,13 +497,13 @@ namespace MVP_TextGame
                 if (shaft1 != null && shaft1.Blocked)
                 {
                     shaft1.Blocked = false;
-                    GameLogger.Log($"[WORLD]: {player.Name} použil Iron Pickaxe a otevřel Shaft1.");
-                    await player.Writer.WriteLineAsync("You used the Iron Pickaxe to clear the rubble!");
-                    await Broadcast($"\n>>> {player.Name} cleared the path to Shaft1! <<<");
+                    GameLogger.Log($"[WORLD]: {player.Name} used an Iron Pickaxe and opened Shaft1.");
+                    await player.Writer.WriteLineAsync("\u001b[38;5;118mYou used the Iron Pickaxe to clear the rubble!\u001b[0m");
+                    await Broadcast($"\n>>> \u001b[38;5;226m{player.Name} \u001b[38;5;118mcleared the path to Shaft1! \u001b[0m<<<");
                 }
                 else
                 {
-                    await player.Writer.WriteLineAsync("There is nothing to mine here.");
+                    await player.Writer.WriteLineAsync("\u001b[38;5;118mThere is nothing to mine here.\u001b[0m");
                 }
             }
         }
@@ -522,9 +522,9 @@ namespace MVP_TextGame
                     {
                         player.Quests["Q1"] = true;
                         player.Inventory.Add("Iron Pickaxe");
-                        GameLogger.Log($"[QUEST]: {player.Name} splnil quest pro Miner (Q1).");
-                        await player.Writer.WriteLineAsync("Quest 1 completed! You got an Iron Pickaxe.");
-                        await Broadcast($"{player.Name} completed a quest for {npc.Name} and got a reward!", room);
+                        GameLogger.Log($"[QUEST]: {player.Name} completed a quest from the Miner (Q1).");
+                        await player.Writer.WriteLineAsync("\u001b[38;5;118mQuest 1 completed! You got an Iron Pickaxe.\u001b[0m");
+                        await Broadcast($"\u001b[38;5;226m{player.Name} \u001b[38;5;118mcompleted a quest for \x1b[38;5;208m{npc.Name} \u001b[38;5;118mand got a reward!\x1b[0m", room);
                         return;
                     }
                 }
@@ -534,9 +534,9 @@ namespace MVP_TextGame
                     if (input.ToLower().Contains("growth") || input.ToLower().Contains("age"))
                     {
                         player.Quests["Q3"] = true;
-                        GameLogger.Log($"[QUEST]: {player.Name} uhádl hádanku pro RiddleMaster (Q3).");
-                        await player.Writer.WriteLineAsync("Correct! Riddle solved.");
-                        await Broadcast($"{player.Name} correctly answered the RiddleMaster's riddle!", room);
+                        GameLogger.Log($"[QUEST]: {player.Name} guessed the riddle from RiddleMaster (Q3).");
+                        await player.Writer.WriteLineAsync("\u001b[38;5;118mCorrect! Riddle solved.\u001b[0m");
+                        await Broadcast($"\u001b[38;5;226m{player.Name} \u001b[38;5;118mcorrectly answered the RiddleMaster's riddle!\u001b[0m", room);
                         return;
                     }
                 }
@@ -546,11 +546,11 @@ namespace MVP_TextGame
         public async Task ShowStats(Player player)
         {
             await player.Writer.WriteLineAsync("\n=== PLAYER STATS ===");
-            await player.Writer.WriteLineAsync($"Name:     {player.Name}");
-            await player.Writer.WriteLineAsync($"HP:       {player.CurrentHealth} / {player.MaxHealth}");
-            await player.Writer.WriteLineAsync($"Attack:   {player.AttackStrength}");
+            await player.Writer.WriteLineAsync($"Name:     \u001b[38;5;226m{player.Name}\u001b[0m");
+            await player.Writer.WriteLineAsync($"HP:       \x1b[91m{player.CurrentHealth} / {player.MaxHealth}\x1b[0m");
+            await player.Writer.WriteLineAsync($"Attack:   \x1b[91m{player.AttackStrength}\x1b[0m");
             await player.Writer.WriteLineAsync($"Weapon:   {player.EquippedWeapon}");
-            await player.Writer.WriteLineAsync($"Deaths:   {player.Deaths}");
+            await player.Writer.WriteLineAsync($"Deaths:   \x1b[91m{player.Deaths}\x1b[0m");
             await player.Writer.WriteLineAsync($"Quests:   {player.Quests.Count} completed");
             await player.Writer.WriteLineAsync($"Has Key:  {(player.HasKey ? "Yes" : "No")}");
             await player.Writer.WriteLineAsync("====================\n");
